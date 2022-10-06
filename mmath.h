@@ -9,6 +9,7 @@
 class mmath {
 public:
     static int sign(int x);
+    static bool SidedCompare(int x, int y, bool greaterThan);
 };
 
 

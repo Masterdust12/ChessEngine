@@ -34,6 +34,8 @@ public:
     bool IsCheckmate();
     bool IsGameEnd();
 
+    bool GetTurn();
+
     bool SquareSafeAndEmpty(const std::string& square);
 
     void PrintBoard();
@@ -45,10 +47,23 @@ public:
 
     bool turn;
 
-private:
-    const char empty_square = '.';
-    const int castle_legal = 999999;
+    bool SoftCheck();
 
+    bool NotAlly(int index);
+
+    bool Ally(int rank, int file);
+    bool Ally(int index);
+    bool Enemy(int index);
+    bool Enemy(int rank, int file);
+    bool Empty(int index);
+    bool Empty(int rank, int file);
+
+    static std::string Square(int index);
+    static std::string Square(int rank, int file);
+    static int Index(int x, int y);
+    static int Index(std::string square);
+
+private:
     int castling_rights[4] = { 0, 0, 0, 0 };
 
     std::array<char, 64> board{};
@@ -70,16 +85,6 @@ private:
     void ParsePawn(std::list<std::string> &list, int index, bool ignore_pawn_rules = false);
     void ParseQueen(std::list<std::string> &list, int index);
     void ParseRook(std::list<std::string> &list, int index);
-    static std::string Square(int index);
-    static std::string Square(int rank, int file);
-    static int Index(int x, int y);
-    static int Index(std::string square);
-
-    bool NotAlly(int index);
-    bool Enemy(int index);
-    bool Enemy(int rank, int file);
-    bool Empty(int index);
-    bool Empty(int rank, int file);
 
     void ParseFEN(std::string FEN);
     void AddMove(std::list<std::string> &move_list, int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);

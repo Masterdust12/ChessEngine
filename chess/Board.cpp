@@ -3,11 +3,14 @@
 //
 
 #include "Board.h"
-#include "mmath.h"
+#include "../mmath.h"
 
 #include <iostream>
 #include <utility>
 #include <string>
+
+const char empty_square = '.';
+const int castle_legal = 999999;
 
 struct Point {
     int x;
@@ -25,7 +28,24 @@ Board::Board(std::string FEN) {
 }
 
 void Board::PushMove(const std::string& move) {
-    SoftPushMove(move);
+    std::string exact_move;
+
+    for (std::string s : legalMoves) {
+        if (s.substr(0, 4) == move.substr(0, 4)) {
+            exact_move = s;
+            break;
+        }
+    }
+
+    if (exact_move.empty()) {
+        PrintBoard();
+
+        std::cout << "Could not find move: " << move << std::endl;
+        PrintMoveStack();
+        return;
+    }
+
+    SoftPushMove(exact_move);
 
     Inspect();
 }
@@ -110,6 +130,11 @@ std::string Board::UndoMove() {
 }
 
 std::string Board::SoftUndoMove() {
+    if (moves.empty()) {
+        std::cout << "No moves to undo" << std::endl;
+        return "";
+    }
+
     std::string move = moves.top();
     moves.pop();
 
@@ -118,19 +143,19 @@ std::string Board::SoftUndoMove() {
 
     char capturedPiece = ParseMove(move, fromIndex, toIndex, promotion);
 
-    if (move == "e1g1") {
+    if (move == "e1g1" && board[fromIndex] == 'K') {
         std::swap(board[fromIndex], board[toIndex]);
         std::swap(board[Index("a1")], board[toIndex + 1]);
     }
-    else if (move == "e1c1") {
+    else if (move == "e1c1" && board[fromIndex] == 'K') {
         std::swap(board[fromIndex], board[toIndex]);
         std::swap(board[Index("h1")], board[toIndex - 1]);
     }
-    else if (move == "e8g8") {
+    else if (move == "e8g8" && board[fromIndex] == 'k') {
         std::swap(board[fromIndex], board[toIndex]);
         std::swap(board[Index("a8")], board[toIndex + 1]);
     }
-    else if (move == "e8c8") {
+    else if (move == "e8c8" && board[fromIndex] == 'k') {
         std::swap(board[fromIndex], board[toIndex]);
         std::swap(board[Index("h8")], board[toIndex - 1]);
     } else goto normal_move;
@@ -140,6 +165,7 @@ std::string Board::SoftUndoMove() {
             castling_right = castle_legal;
     }
 
+    turn = !turn;
     return move;
 
     normal_move:
@@ -161,25 +187,14 @@ std::string Board::SoftUndoMove() {
         board[Index(square)] = turn ? 'p' : 'P';
     }
 
-    if (fromIndex == Index("a1") && board[fromIndex] == 'R' && castling_rights[0] == moves.size())
+    if (fromIndex == Index("e1") && board[fromIndex] == 'K' && castling_rights[0] == moves.size())
         castling_rights[0] = castle_legal;
-    else if (fromIndex == Index("h1") && board[fromIndex] == 'R')
+    else if (fromIndex == Index("e1") && board[fromIndex] == 'K' && castling_rights[1] == moves.size())
         castling_rights[1] = castle_legal;
-    else if (fromIndex == Index("a8") && board[fromIndex] == 'r')
+    else if (fromIndex == Index("e8") && board[fromIndex] == 'k' && castling_rights[2] == moves.size())
         castling_rights[2] = castle_legal;
-    else if (fromIndex == Index("h8") && board[fromIndex] == 'r')
+    else if (fromIndex == Index("e8") && board[fromIndex] == 'k' && castling_rights[3] == moves.size())
         castling_rights[3] = castle_legal;
-    else if (fromIndex == Index("e1") && board[fromIndex] == 'K') {
-        if (castling_rights[0] == moves.size())
-            castling_rights[0] = castle_legal;
-        if (castling_rights[1] == moves.size())
-            castling_rights[1] = castle_legal;
-    } else if (fromIndex == Index("e8") && board[fromIndex] == 'k') {
-        if (castling_rights[2] == moves.size())
-            castling_rights[2] = castle_legal;
-        if (castling_rights[3] == moves.size())
-            castling_rights[3] = castle_legal;
-    }
 
     return move;
 }
@@ -382,7 +397,7 @@ void Board::GenCaptures(std::list<std::string> &move_list, std::list<std::string
 
         ParseMove(move, fromIndex, toIndex, g);
 
-        if (board[toIndex] != empty_square && isupper(board[toIndex]) != turn) {
+        if (board[toIndex] != empty_square) {
             capture_list.push_back(move);
         }
     }
@@ -579,6 +594,9 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
         if (ri > 7)
             break;
 
+        if (Ally(ri, fi))
+            break;
+
         AddMove(move_list, index, Index(ri, fi));
 
         if (!Empty(ri, fi))
@@ -591,6 +609,9 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
         int fi = file;
 
         if (ri < 0)
+            break;
+
+        if (Ally(ri, fi))
             break;
 
         AddMove(move_list, index, Index(ri, fi));
@@ -607,6 +628,9 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
         if (fi > 7)
             break;
 
+        if (Ally(ri, fi))
+            break;
+
         AddMove(move_list, index, Index(ri, fi));
 
         if (!Empty(ri, fi))
@@ -619,6 +643,9 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
         int fi = file - i;
 
         if (fi < 0)
+            break;
+
+        if (Ally(ri, fi))
             break;
 
         AddMove(move_list, index, Index(ri, fi));
@@ -655,6 +682,14 @@ bool Board::NotAlly(int index) {
     return Empty(index) || Enemy(index);
 }
 
+bool Board::Ally(int rank, int file) {
+    return Ally(Index(rank, file));
+}
+
+bool Board::Ally(int index) {
+    return !Empty(index) && isupper(board[index]) == turn;
+}
+
 bool Board::Enemy(int index) {
     return !Empty(index) && isupper(board[index]) != turn;
 }
@@ -667,7 +702,7 @@ bool Board::Enemy(int rank, int file) {
 }
 
 bool Board::Empty(int index) {
-    return board[index] == empty_square;
+    return index != -1 && board[index] == empty_square;
 }
 
 bool Board::Empty(int rank, int file) {
@@ -780,4 +815,15 @@ char Board::GetPieceAt(int x) const {
 
 char Board::GetPieceAt(std::string square) const {
     return board[Index(std::move(square))];
+}
+
+bool Board::GetTurn() {
+    return turn;
+}
+
+bool Board::SoftCheck() {
+    std::array<bool, 64> temp{};
+    GenAttackedSquares(temp);
+
+    return temp[FindKing()];
 }
