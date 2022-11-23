@@ -278,7 +278,7 @@ void Board::Inspect() {
     pseudoLegalMoves.clear();
     legalMoves.clear();
     legalCaptures.clear();
-    attacked_squares.fill(false);
+    attacked_squares.fill(0);
 
     GenAttackedSquares(attacked_squares);
     GenPseudoLegalMoves(pseudoLegalMoves);
@@ -287,7 +287,7 @@ void Board::Inspect() {
     GenCaptures(legalMoves, legalCaptures);
 }
 
-void Board::GenAttackedSquares(std::array<bool, 64> &squares) {
+void Board::GenAttackedSquares(std::array<int, 64> &squares) {
     turn = !turn;
     std::list<std::string> temp_moves;
     GenPseudoLegalMoves(temp_moves);
@@ -302,7 +302,7 @@ void Board::GenAttackedSquares(std::array<bool, 64> &squares) {
         if (tolower(board[fromIndex]) == 'p' && abs(fromIndex - toIndex) % 8 == 0)
             continue;
 
-        squares[toIndex] = true;
+        squares[toIndex]++;
     }
 }
 
@@ -340,29 +340,12 @@ void Board::GenPseudoLegalMoves(std::list<std::string> &list, bool ignore_pawn_r
 
 void Board::PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<std::string> &pruned) {
     for (const std::string& move : non_pruned) {
-        std::list<std::string> temp_moves;
-        std::array<bool, 64> temp_attacked_squares{};
-
         SoftPushMove(move);
 
-        GenPseudoLegalMoves(temp_moves, true);
-
-        for (const auto& pseudo_move : temp_moves) {
-            int fromIndex, toIndex;
-            char g;
-
-            ParseMove(pseudo_move, fromIndex, toIndex, g);
-
-            if (tolower(board[fromIndex]) == 'p' && abs(fromIndex - toIndex) % 8 == 0)
-                continue;
-
-            if (tolower(board[toIndex]) == 'k')
-                goto next_move;
+        if (!IsCheck()) {
+            pruned.push_back(move);
         }
 
-        pruned.push_back(move);
-
-        next_move:
         SoftUndoMove();
     }
 
@@ -780,6 +763,41 @@ void Board::PrintMoveStack() {
     }
 }
 
+bool Board::raycast(int fromIndex, int pointingDir, int *indexHit) {
+    int rankDiff = Rank(fromIndex) - Rank(pointingDir);
+    int fileDiff = File(fromIndex) - File(pointingDir);
+
+    // if the direction of the raycast is not diagonal or straight, return false
+    if (abs(rankDiff) != abs(fileDiff) && rankDiff != 0 && fileDiff != 0)
+        return false;
+
+    bool diagonal = abs(rankDiff) == abs(fileDiff);
+
+    rankDiff = mmath::sign(rankDiff);
+    fileDiff = mmath::sign(fileDiff);
+
+    int rank = Rank(fromIndex) + rankDiff;
+    int file = File(fromIndex) + fileDiff;
+
+    while (rankDiff >= 0 && rankDiff <= 7 && fileDiff >= 0 && fileDiff <= 7) {
+        if (Enemy(rank, file)) {
+            if (tolower(GetPieceAt(rank, file)) == 'r' && !diagonal
+                || tolower(GetPieceAt(rank, file)) == 'b' && diagonal
+                || tolower(GetPieceAt(rank, file)) == 'q') {
+
+                *indexHit = Index(rank, file);
+                return true;
+            } else
+                return false;
+        } else if (Ally(rank, file)) {
+            return false;
+        }
+
+        rank += rankDiff;
+        file += fileDiff;
+    }
+}
+
 bool Board::SquareSafeAndEmpty(const std::string& square) {
     return !attacked_squares[Index(square)] && board[Index(square)] == empty_square;
 }
@@ -822,8 +840,8 @@ bool Board::GetTurn() {
 }
 
 bool Board::SoftCheck() {
-    std::array<bool, 64> temp{};
+    std::array<int, 64> temp{};
     GenAttackedSquares(temp);
 
-    return temp[FindKing()];
+    return temp[FindKing()] > 0;
 }

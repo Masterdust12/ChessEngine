@@ -67,15 +67,17 @@ private:
     int castling_rights[4] = { 0, 0, 0, 0 };
 
     std::array<char, 64> board{};
-    std::array<bool, 64> attacked_squares = { false };
+    std::array<int, 64> attacked_squares = { false };
     std::stack<std::string> moves;
     std::list<std::string> pseudoLegalMoves;
     std::list<std::string> pseudoLegalCaptures;
     std::list<std::string> legalMoves;
     std::list<std::string> legalCaptures;
 
+    bool raycast(int fromIndex, int pointingDir, int *squareHit = nullptr);
+
     void Inspect();
-    void GenAttackedSquares(std::array<bool, 64> &squares);
+    void GenAttackedSquares(std::array<int, 64> &squares);
     void GenPseudoLegalMoves(std::list<std::string> &list, bool ignore_pawn_rules = false);
     void GenCaptures(std::list<std::string> &move_list, std::list<std::string> &capture_list);
     void PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<std::string> &pruned);
