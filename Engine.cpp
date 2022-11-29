@@ -13,7 +13,7 @@ Engine::Engine(int depth, float searchTime, Board &board) : board(board) {
 }
 
 std::list<std::string> Engine::GetBestMove() {
-    auto moves = board.GetLegalMoves();
+    auto legalMoves = board.GetLegalMoves();
 
     float start_time = clock();
 

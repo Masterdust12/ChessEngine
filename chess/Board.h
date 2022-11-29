@@ -10,7 +10,7 @@ class Board {
 
 public:
     Board();
-    explicit Board(std::string FEN);
+    explicit Board(std::string FEN, bool fauxStart = false);
     void PushMove(const std::string& move);
     void SoftPushMove(const std::string& move);
     std::string UndoMove();
@@ -27,9 +27,11 @@ public:
     std::list<std::string> GetPseudoLegalMoves();
     std::list<std::string> GetPseudoLegalCaptures();
 
+    int FindEnemyKing();
     int FindKing();
 
     bool IsCheck();
+    bool IsSoftCheck();
     bool IsStalemate();
     bool IsCheckmate();
     bool IsGameEnd();
@@ -38,11 +40,11 @@ public:
 
     bool SquareSafeAndEmpty(const std::string& square);
 
+    bool RaycastReflect(int from, int aim, int ignores = 0, int *reflectionPoint = nullptr);
+
     void PrintBoard();
+    void PrintAttackedSquares();
     void PrintMoveStack();
-    char ParseMove(std::string move, int &fromIndex, int &toIndex, char &promotion) const;
-    static int Rank(int index);
-    static int File(int index);
     std::string GenMove(int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);
 
     bool turn;
@@ -60,11 +62,18 @@ public:
 
     static std::string Square(int index);
     static std::string Square(int rank, int file);
+
     static int Index(int x, int y);
     static int Index(std::string square);
 
+    static int Rank(int index);
+    static int File(int index);
+
+    static char ParseMove(std::string move, int &fromIndex, int &toIndex, char &promotion) ;
+
 private:
     int castling_rights[4] = { 0, 0, 0, 0 };
+    std::string soft_move;
 
     std::array<char, 64> board{};
     std::array<int, 64> attacked_squares = { false };
@@ -73,8 +82,6 @@ private:
     std::list<std::string> pseudoLegalCaptures;
     std::list<std::string> legalMoves;
     std::list<std::string> legalCaptures;
-
-    bool raycast(int fromIndex, int pointingDir, int *squareHit = nullptr);
 
     void Inspect();
     void GenAttackedSquares(std::array<int, 64> &squares);

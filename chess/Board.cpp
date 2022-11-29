@@ -12,19 +12,15 @@
 const char empty_square = '.';
 const int castle_legal = 999999;
 
-struct Point {
-    int x;
-    int y;
-};
-
 Board::Board() : Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {}
 
-Board::Board(std::string FEN) {
+Board::Board(std::string FEN, bool fauxStart) {
     turn = true;
     board = std::array<char, 64>();
-
     ParseFEN(std::move(FEN));
-    Inspect();
+
+    if (!fauxStart)
+        Inspect();
 }
 
 void Board::PushMove(const std::string& move) {
@@ -243,7 +239,7 @@ void Board::ParseFEN(std::string FEN) {
     i++;
 }
 
-char Board::ParseMove(std::string move, int &fromIndex, int &toIndex, char& promotion) const {
+char Board::ParseMove(std::string move, int &fromIndex, int &toIndex, char& promotion) {
     std::string fromSquare = move.substr(0, 2);
     std::string toSquare = move.substr(2, 2);
     char capture = empty_square;
@@ -273,6 +269,17 @@ void Board::PrintBoard() {
     std::cout << "------------------------" << std::endl;
 }
 
+void Board::PrintAttackedSquares() {
+std::cout << "------------------------" << std::endl;
+    for (int i = 0; i < 64; i++) {
+        std::cout << attacked_squares[i] << " ";
+        if (i % 8 == 7) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "------------------------" << std::endl;
+}
+
 void Board::Inspect() {
     pseudoLegalCaptures.clear();
     pseudoLegalMoves.clear();
@@ -290,7 +297,7 @@ void Board::Inspect() {
 void Board::GenAttackedSquares(std::array<int, 64> &squares) {
     turn = !turn;
     std::list<std::string> temp_moves;
-    GenPseudoLegalMoves(temp_moves);
+    GenPseudoLegalMoves(temp_moves, true);
     turn = !turn;
 
     for (const auto& pseudo_move : temp_moves) {
@@ -342,9 +349,8 @@ void Board::PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<st
     for (const std::string& move : non_pruned) {
         SoftPushMove(move);
 
-        if (!IsCheck()) {
+        if (!IsSoftCheck())
             pruned.push_back(move);
-        }
 
         SoftUndoMove();
     }
@@ -391,7 +397,7 @@ void Board::ParseBishop(std::list<std::string> &move_list, int index) {
     int file = File(index);
 
     // Up Right
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank + i;
         int fi = file + i;
 
@@ -405,7 +411,7 @@ void Board::ParseBishop(std::list<std::string> &move_list, int index) {
     }
 
     // Up Left
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank + i;
         int fi = file - i;
 
@@ -419,7 +425,7 @@ void Board::ParseBishop(std::list<std::string> &move_list, int index) {
     }
 
     // Down Right
-    for (int i = 1; i < 6; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank - i;
         int fi = file + i;
 
@@ -433,7 +439,7 @@ void Board::ParseBishop(std::list<std::string> &move_list, int index) {
     }
 
     // Down Left
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank - i;
         int fi = file - i;
 
@@ -570,7 +576,7 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
     int file = File(index);
 
     // Up
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank + i;
         int fi = file;
 
@@ -587,7 +593,7 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
     }
 
     // Down
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank - i;
         int fi = file;
 
@@ -604,7 +610,7 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
     }
 
     // Right
-    for (int i = 1; i < 6; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank;
         int fi = file + i;
 
@@ -621,7 +627,7 @@ void Board::ParseRook(std::list<std::string> &move_list, int index) {
     }
 
     // Left
-    for (int i = 1; i < 7; i++) {
+    for (int i = 1; i <= 7; i++) {
         int ri = rank;
         int fi = file - i;
 
@@ -763,11 +769,11 @@ void Board::PrintMoveStack() {
     }
 }
 
-bool Board::raycast(int fromIndex, int pointingDir, int *indexHit) {
-    int rankDiff = Rank(fromIndex) - Rank(pointingDir);
-    int fileDiff = File(fromIndex) - File(pointingDir);
+bool Board::RaycastReflect(int from, int aim, int ignores, int *squareHit) {
+    int rankDiff = Rank(aim) - Rank(from);
+    int fileDiff = File(aim) - File(from);
 
-    // if the direction of the raycast is not diagonal or straight, return false
+    // if the direction of the ray is not diagonal or straight, return false
     if (abs(rankDiff) != abs(fileDiff) && rankDiff != 0 && fileDiff != 0)
         return false;
 
@@ -776,26 +782,64 @@ bool Board::raycast(int fromIndex, int pointingDir, int *indexHit) {
     rankDiff = mmath::sign(rankDiff);
     fileDiff = mmath::sign(fileDiff);
 
-    int rank = Rank(fromIndex) + rankDiff;
-    int file = File(fromIndex) + fileDiff;
+    int rank = Rank(from) + rankDiff;
+    int file = File(from) + fileDiff;
 
-    while (rankDiff >= 0 && rankDiff <= 7 && fileDiff >= 0 && fileDiff <= 7) {
-        if (Enemy(rank, file)) {
-            if (tolower(GetPieceAt(rank, file)) == 'r' && !diagonal
-                || tolower(GetPieceAt(rank, file)) == 'b' && diagonal
-                || tolower(GetPieceAt(rank, file)) == 'q') {
+    while (rank >= 0 && rank <= 7 && file >= 0 && file <= 7) {
+        if (!Empty(rank, file))
+            if (!Ally(rank, file) && ignores > 0) {
+                ignores--;
+            } else if (Ally(rank, file)) {
+                if (tolower(GetPieceAt(rank, file)) == 'r' && !diagonal
+                    || tolower(GetPieceAt(rank, file)) == 'b' && diagonal
+                    || tolower(GetPieceAt(rank, file)) == 'q') {
 
-                *indexHit = Index(rank, file);
-                return true;
-            } else
+                    if (squareHit != nullptr)
+                        *squareHit = Index(rank, file);
+
+                    return true;
+                } else
+                    return false;
+            } else if (Enemy(rank, file))
                 return false;
-        } else if (Ally(rank, file)) {
-            return false;
-        }
 
         rank += rankDiff;
         file += fileDiff;
     }
+
+    return false;
+}
+
+bool Board::IsSoftCheck() {
+    if (moves.empty())
+        throw std::runtime_error("IsSoftCheck() called without a move on the stack");
+
+    int from, to;
+    char prom;
+
+    ParseMove(moves.top(), from, to, prom);
+
+    // If the player moved the king to a square that is attacked, that will always be a check
+    if (board[to] == (!turn ? 'K' : 'k'))
+        return attacked_squares[to] || RaycastReflect(to, from) || RaycastReflect(from, to, 1);
+
+    int kingIndex = FindEnemyKing();
+
+    switch (attacked_squares[kingIndex]) {
+        case 2:
+            // Case 1: The king is in double check, so the king needs to be moved
+            return true;
+        case 1:
+            // Case 2: The square was under attack before once, check to see if the move was a block.
+            return RaycastReflect(kingIndex, to) || !RaycastReflect(kingIndex, to, 1);
+        case 0:
+            // Case 3: The square was not attacked before, check to make sure the piece that was moved was not pinned.
+            return RaycastReflect(kingIndex, from);
+    }
+
+    // I don't think this should ever happen, but just in case
+    // I hate that GitHub CoPilot generated that above comment, wtf
+    return true;
 }
 
 bool Board::SquareSafeAndEmpty(const std::string& square) {
@@ -817,6 +861,15 @@ bool Board::IsGameEnd() {
 int Board::FindKing() {
     for (int i = 0; i < 64; i++) {
         if (board[i] == 'k' && !turn || board[i] == 'K' && turn)
+            return i;
+    }
+
+    return -1;
+}
+
+int Board::FindEnemyKing() {
+    for (int i = 0; i < 64; i++) {
+        if (board[i] == 'k' && turn || board[i] == 'K' && !turn)
             return i;
     }
 
