@@ -9,10 +9,13 @@
 class Board {
 
 public:
+    std::array<char, 64> board{};
+
     Board();
-    explicit Board(std::string FEN, bool fauxStart = false);
+    explicit Board(std::string FEN, bool fauxStart = false, bool debug = false);
     void PushMove(const std::string& move);
     void SoftPushMove(const std::string& move);
+
     std::string UndoMove();
     std::string SoftUndoMove();
 
@@ -40,7 +43,8 @@ public:
 
     bool SquareSafeAndEmpty(const std::string& square);
 
-    bool RaycastReflect(int from, int aim, int ignores = 0, int *reflectionPoint = nullptr);
+    bool RaycastReflect(int from, int aim, int ignores = 0, int* pointTouched = nullptr);
+    bool RaycastReflectToPoint(int from, int aim, int stopSquare, int ignores = 0, int* pointTouched = nullptr);
 
     void PrintBoard();
     void PrintAttackedSquares();
@@ -48,8 +52,6 @@ public:
     std::string GenMove(int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);
 
     bool turn;
-
-    bool SoftCheck();
 
     bool NotAlly(int index);
 
@@ -75,7 +77,6 @@ private:
     int castling_rights[4] = { 0, 0, 0, 0 };
     std::string soft_move;
 
-    std::array<char, 64> board{};
     std::array<int, 64> attacked_squares = { false };
     std::stack<std::string> moves;
     std::list<std::string> pseudoLegalMoves;
@@ -84,16 +85,22 @@ private:
     std::list<std::string> legalCaptures;
 
     void Inspect();
-    void GenAttackedSquares(std::array<int, 64> &squares);
-    void GenPseudoLegalMoves(std::list<std::string> &list, bool ignore_pawn_rules = false);
+    void GenPseudoLegalMoves(std::list<std::string> &list);
     void GenCaptures(std::list<std::string> &move_list, std::list<std::string> &capture_list);
     void PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<std::string> &pruned);
+    void GenAttackedSquares(std::array<int, 64> &squaresRef);
+
     void ParseBishop(std::list<std::string> &list, int index);
     void ParseKing(std::list<std::string> &list, int index);
     void ParseKnight(std::list<std::string> &list, int index);
-    void ParsePawn(std::list<std::string> &list, int index, bool ignore_pawn_rules = false);
+    void ParsePawn(std::list<std::string> &list, int index);
     void ParseQueen(std::list<std::string> &list, int index);
     void ParseRook(std::list<std::string> &list, int index);
+
+    static int closerSquare(int base, int compare1, int compare2);
+
+    void GenCastling(std::list<std::string> &list);
+    void GenPinnedMoves(std::list<std::string> &list, int fromIndex);
 
     void ParseFEN(std::string FEN);
     void AddMove(std::list<std::string> &move_list, int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);

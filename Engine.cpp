@@ -118,17 +118,27 @@ void Engine::AddPriorityMoves(std::list<std::string> &priorities) {
                 goto next_move;
         }
 
-        if (board.Enemy(Board::Index(move.substr(2, 2)))) {
+        int from, to;
+        char prom;
+
+        Board::ParseMove(move, from, to, prom);
+
+        if (board.Enemy(to)) {
             priorities.push_back(move);
             continue;
         }
 
-        board.SoftPushMove(move);
+        std::swap(board.board[from], board.board[to]);
 
-        if (board.SoftCheck())
+        board.turn = !board.turn;
+
+        if (board.RaycastReflect(board.FindKing(), to)) {
             priorities.push_back(move);
+        }
 
-        board.SoftUndoMove();
+        board.turn = !board.turn;
+
+        std::swap(board.board[from], board.board[to]);
 
         next_move:
         continue;
