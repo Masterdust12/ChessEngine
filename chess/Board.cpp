@@ -367,6 +367,7 @@ void Board::PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<st
     int* tempPointer = new int;
 
     for (const std::string& move : non_pruned) {
+
         std::string square = move.substr(0, 2);
 
         if (square == squareIgnore)
@@ -414,7 +415,7 @@ void Board::PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<st
                     if (!RaycastReflect(kingIndex, toIndex, 0, tempPointer)
                         || closerSquare(kingIndex, *tempPointer, toIndex) == toIndex) {
                         pruned.push_back(move);
-                        squareAutoAdd = move.substr(2, 2);
+                        squareAutoAdd = square;
                     } else {
                         Board::GenPinnedMoves(pruned, fromIndex);
                         squareIgnore = square;
@@ -447,7 +448,7 @@ void Board::GenPinnedMoves(std::list<std::string> &list, int fromIndex) {
     int rankDiff = mmath::sign(Rank(fromIndex) - Rank(kingIndex));
     int fileDiff = mmath::sign(File(fromIndex) - File(kingIndex));
 
-    char boardPiece = tolower(board[fromIndex]);
+    int boardPiece = tolower(board[fromIndex]);
     int sum = abs(rankDiff) + abs(fileDiff);
 
     if (boardPiece != 'q' && !(sum == 2 && boardPiece == 'b') && !(sum == 1 && boardPiece == 'r')) return;
@@ -600,14 +601,15 @@ void Board::ParsePawn(std::list<std::string> &move_list, int index) {
     if (isWhite) {
         std::list<int> squares;
 
-        if (!Empty(rank + 1, file - 1))
+        if (!Empty(rank + 1, file - 1) && file - 1 > 0)
             squares.push_back(index - 9);
-        if (!Empty(rank + 1, file + 1))
+        if (!Empty(rank + 1, file + 1) && file + 1 < 8)
             squares.push_back(index - 7);
-        if (Empty(rank + 1, file))
+        if (Empty(rank + 1, file)) {
             squares.push_back(index - 8);
-        if (rank == 1 && Empty(rank - 2, file))
-            squares.push_back(index - 16);
+            if (rank == 1 && Empty(rank + 2, file))
+                squares.push_back(index - 16);
+        }
 
         for (auto square : squares) {
             if (Rank(square) == 7) {
@@ -639,10 +641,11 @@ void Board::ParsePawn(std::list<std::string> &move_list, int index) {
             squares.push_back(index + 7);
         if (!Empty(rank - 1, file + 1))
             squares.push_back(index + 9);
-        if (Empty(rank - 1, file))
+        if (Empty(rank - 1, file)) {
             squares.push_back(index + 8);
-        if (rank == 1 && Empty(rank - 2, file))
-            squares.push_back(index + 16);
+            if (rank == 6 && Empty(rank - 2, file))
+                squares.push_back(index + 16);
+        }
 
         for (auto square : squares) {
             if (Rank(square) == 7) {

@@ -8,7 +8,7 @@ int mmath::sign(int x) {
     return (x > 0) - (x < 0);
 }
 
-bool mmath::SidedCompare(int x, int y, bool greaterThan) {
+bool mmath::SidedCompare(float x, float y, bool greaterThan) {
     return greaterThan ? x > y : x < y;
 }
 

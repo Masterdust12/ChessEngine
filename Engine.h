@@ -19,7 +19,7 @@ public:
     void AddPriorityMoves(std::list<std::string> &list);
     std::list<std::string> CreateOrderedMoves(std::list<std::string> priorities = {});
 
-    float SearchEval(int depth, float alpha, float beta, bool maximizingPlayer);
+    float SearchEval(int depth, float alpha, float beta, bool maximizingWhite);
 
     std::list<std::string> SearchMove(int depth, std::list<std::string> check_moves, float &eval);
 

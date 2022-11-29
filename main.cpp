@@ -6,12 +6,13 @@
 using namespace std;
 
 void TestEngine(Board board);
+void TestEngine2(Board board);
 void PrintLegalMoves(Board board);
 
 int main() {
     srand(time(nullptr));
 
-    Board board("r5k1/p1n1pr1p/6P1/2pPp1P1/4P2Q/1Pp5/1qP5/2RK2NR b - - 0 24", false);
+    Board board("1R6/5pkp/p2Qp1p1/3p2q1/3P4/2P2P2/r4PPP/6K1 w - - 5 31", false);
 
 //    Engine testEngine(1, 100, board);
 //
@@ -23,12 +24,14 @@ int main() {
 //        cout << move << endl;
 //    }
 //
-//    board.PrintBoard();
+    //PrintLegalMoves(board);
+    board.PrintBoard();
 
     //board.PrintAttackedSquares();
 
     //PrintLegalMoves(board);
-    TestEngine(board);
+    //TestEngine(board);
+    TestEngine2(board);
 }
 
 void PrintLegalMoves(Board board) {
@@ -53,4 +56,22 @@ void TestEngine(Board board) {
     for(const auto& move : list) {
         std::cout << move << std::endl;
     }
+}
+
+void TestEngine2(Board board) {
+    Engine engine(6, 6000, board);
+
+    float max = 1000;//(board.GetTurn()) ? -99 : 99;
+
+    board.PushMove("c3c4");
+
+    float eval;
+
+    eval = (board.GetTurn()) ?
+           engine.SearchEval(4, -9999, max, true)
+         :   engine.SearchEval(4,  max, 9999, false);
+
+    board.UndoMove();
+
+    cout << eval << endl;
 }

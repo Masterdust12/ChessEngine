@@ -30,7 +30,7 @@ std::list<std::string> Engine::GetBestMove() {
         best_moves = std::move(moves);
 
         // If the search time has been exceeded, break out of the loop
-        if((clock() - start_time) / CLOCKS_PER_SEC > searchTime || std::abs(eval) > 99) {
+        if((clock() - start_time) / CLOCKS_PER_SEC > searchTime || std::abs(eval) > 99 || legalMoves.size() == 1) {
             break;
         }
     }
@@ -46,15 +46,20 @@ std::list<std::string> Engine::SearchMove(int depth, std::list<std::string> chec
     // copy check list to local variable
     std::list<std::string> moves = CreateOrderedMoves(std::move(check_moves));
 
-    int max = board.GetTurn() ? -99 : 99;
+    float max = board.GetTurn() ? -99 : 99;
 
     for (const auto& move : moves) {
+
+        if (move == "c3c4")
+            int x = 0;
+
         board.PushMove(move);
 
-        int eval;
+        float eval;
 
-        if (board.GetTurn()) eval = SearchEval(depth - 1, -99, max, true);
-        else eval = SearchEval(depth - 1,  max, 99, false);
+        eval = (board.GetTurn()) ?
+                SearchEval(depth - 1, -99, max, true)
+            :   SearchEval(depth - 1,  max, 99, false);
 
         board.UndoMove();
 
@@ -71,16 +76,15 @@ std::list<std::string> Engine::SearchMove(int depth, std::list<std::string> chec
     return best_moves;
 }
 
-float Engine::SearchEval(int depth, float alpha, float beta, bool maximizingPlayer) {
+float Engine::SearchEval(int depth, float alpha, float beta, bool maximizingWhite) {
     nodesChecked++;
 
     std::list<std::string> moves = CreateOrderedMoves();
 
-    if (depth == 0 || board.IsGameEnd()) {
+    if (depth == 0 || board.IsGameEnd())
         return EvaluatePosition(depth);
-    }
 
-    if (maximizingPlayer) {
+    if (maximizingWhite) {
        float value = -INT16_MAX;
        for (const auto& move : moves) {
            board.PushMove(move);
@@ -167,7 +171,7 @@ std::list<std::string> Engine::CreateOrderedMoves(std::list<std::string> priorit
 
 float Engine::EvaluatePosition(int depth) {
     if (board.IsCheckmate()) {
-        return 100 * (board.GetTurn() * -2 + 1) * (depth + 1);
+        return 1000 * (board.GetTurn() * -2 + 1) * (depth + 1);
     } else if (board.IsStalemate()) {
         return 0;
     }
@@ -176,10 +180,10 @@ float Engine::EvaluatePosition(int depth) {
 }
 
 float Engine::MaterialDifference() {
-    int runningTotal = 0;
+    float runningTotal = 0;
 
     for (int i = 0; i < 64; i++) {
-        int worth = 0;
+        float worth = 0;
 
         switch (tolower(board.GetPieceAt(i))) {
             case 'p':
