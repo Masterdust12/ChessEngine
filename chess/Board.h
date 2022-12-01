@@ -11,6 +11,17 @@ class Board {
 public:
     std::array<char, 64> board{};
 
+    enum MoveState {
+        NORMAL, CAPTURE, PROMOTION, ENPASSANT
+    };
+    struct Move {
+        MoveState type;
+        int fromSquare;
+        int toSquare;
+        char capture;
+        char promotion;
+    };
+
     Board();
     explicit Board(std::string FEN, bool fauxStart = false, bool debug = false);
     void PushMove(const std::string& move);
@@ -27,7 +38,7 @@ public:
 
     std::list<std::string> GetLegalMoves();
     std::list<std::string> GetLegalCaptures();
-    std::list<std::string> GetPseudoLegalMoves();
+    std::list<Move> GetPseudoLegalMoves();
     std::list<std::string> GetPseudoLegalCaptures();
 
     int FindEnemyKing();
@@ -72,6 +83,7 @@ public:
     static int File(int index);
 
     static char ParseMove(std::string move, int &fromIndex, int &toIndex, char &promotion) ;
+    static Move ParseMove(std::string move);
 
 private:
     int castling_rights[4] = { 0, 0, 0, 0 };
@@ -79,23 +91,25 @@ private:
 
     std::array<int, 64> attacked_squares = { false };
     std::stack<std::string> moves;
-    std::list<std::string> pseudoLegalMoves;
     std::list<std::string> pseudoLegalCaptures;
     std::list<std::string> legalMoves;
     std::list<std::string> legalCaptures;
 
+    std::list<Move> pseudoLegalMoves;
+    std::stack<Move> moveStack;
+
     void Inspect();
-    void GenPseudoLegalMoves(std::list<std::string> &list);
+    void GenPseudoLegalMoves(std::list<Move> &list);
     void GenCaptures(std::list<std::string> &move_list, std::list<std::string> &capture_list);
     void PruneNonKosherMoves(std::list<std::string> &non_pruned, std::list<std::string> &pruned);
     void GenAttackedSquares(std::array<int, 64> &squaresRef);
 
-    void ParseBishop(std::list<std::string> &list, int index);
-    void ParseKing(std::list<std::string> &list, int index);
-    void ParseKnight(std::list<std::string> &list, int index);
-    void ParsePawn(std::list<std::string> &list, int index);
-    void ParseQueen(std::list<std::string> &list, int index);
-    void ParseRook(std::list<std::string> &list, int index);
+    void ParseBishop(std::list<Move> &list, int index);
+    void ParseKing(std::list<Move> &list, int index);
+    void ParseKnight(std::list<Move> &list, int index);
+    void ParsePawn(std::list<Move> &list, int index);
+    void ParseQueen(std::list<Move> &list, int index);
+    void ParseRook(std::list<Move> &list, int index);
 
     static int closerSquare(int base, int compare1, int compare2);
 
@@ -104,6 +118,7 @@ private:
 
     void ParseFEN(std::string FEN);
     void AddMove(std::list<std::string> &move_list, int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);
+    void AddMove(std::list<Move> &move_list, int fromSquare, int toSquare, char promotion = 0, bool en_passant = false);
 };
 
 

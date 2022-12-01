@@ -24,17 +24,21 @@ Board::Board(std::string FEN, bool fauxStart, bool debug) {
 }
 
 void Board::Inspect() {
-    pseudoLegalCaptures.clear();
-    pseudoLegalMoves.clear();
-    legalMoves.clear();
-    legalCaptures.clear();
-    attacked_squares.fill(0);
+//    pseudoLegalCaptures.clear();
+//    pseudoLegalMoves.clear();
+//    legalMoves.clear();
+//    legalCaptures.clear();
+//    attacked_squares.fill(0);
+//
+//    GenAttackedSquares(attacked_squares);
+//    GenPseudoLegalMoves(pseudoLegalMoves);
+//    GenCaptures(pseudoLegalMoves, pseudoLegalCaptures);
+//    PruneNonKosherMoves(pseudoLegalMoves, legalMoves);
+//    GenCaptures(legalMoves, legalCaptures);
 
-    GenAttackedSquares(attacked_squares);
+    pseudoLegalMoves.clear();
+
     GenPseudoLegalMoves(pseudoLegalMoves);
-    GenCaptures(pseudoLegalMoves, pseudoLegalCaptures);
-    PruneNonKosherMoves(pseudoLegalMoves, legalMoves);
-    GenCaptures(legalMoves, legalCaptures);
 }
 
 void Board::PushMove(const std::string& move) {
@@ -225,7 +229,7 @@ void Board::ParseFEN(std::string FEN) {
             offset--;
         }
 
-        if (c == ' ') {
+        if (c == 0) {
             turn = FEN[i + 1] == 'w';
             i += 3;
             break;
@@ -272,6 +276,23 @@ char Board::ParseMove(std::string move, int &fromIndex, int &toIndex, char& prom
     return capture;
 }
 
+Board::Move Board::ParseMove(std::string move) {
+    int fromIndex, toIndex;
+    char promotion;
+    char capture = ParseMove(std::move(move), fromIndex, toIndex, promotion);
+
+    MoveState state;
+
+    if (capture != empty_square)
+        state = CAPTURE;
+    else if (promotion != empty_square)
+        state = PROMOTION;
+    else
+        state = NORMAL;
+
+    return {state, fromIndex, toIndex, promotion, capture};
+}
+
 void Board::PrintBoard() {
     std::cout << "------------------------" << std::endl;
     for (int i = 0; i < 64; i++) {
@@ -294,7 +315,7 @@ std::cout << "------------------------" << std::endl;
     std::cout << "------------------------" << std::endl;
 }
 
-void Board::GenPseudoLegalMoves(std::list<std::string> &list) {
+void Board::GenPseudoLegalMoves(std::list<Move> &list) {
     for (int i = 0; i < board.size(); i++) {
         int piece = tolower(board[i]);
 
@@ -302,24 +323,24 @@ void Board::GenPseudoLegalMoves(std::list<std::string> &list) {
             continue;
 
         switch (piece) {
-            case 'p':
-                ParsePawn(list, i);
-                break;
+//            case 'p':
+//                ParsePawn(list, i);
+//                break;
             case 'r':
                 ParseRook(list, i);
                 break;
-            case 'n':
-                ParseKnight(list, i);
-                break;
+//            case 'n':
+//                ParseKnight(list, i);
+//                break;
             case 'b':
                 ParseBishop(list, i);
                 break;
-            case 'q':
-                ParseQueen(list, i);
-                break;
-            case 'k':
-                ParseKing(list, i);
-                break;
+//            case 'q':
+//                ParseQueen(list, i);
+//                break;
+//            case 'k':
+//                ParseKing(list, i);
+//                break;
             default:
                 break;
         }
@@ -329,7 +350,7 @@ void Board::GenPseudoLegalMoves(std::list<std::string> &list) {
 void Board::GenAttackedSquares(std::array<int, 64> &squaresRef) {
     turn = !turn;
     std::list<std::string> list;
-    GenPseudoLegalMoves(list);
+    //GenPseudoLegalMoves(list);
     turn = !turn;
 
     for (std::string move : list) {
@@ -495,68 +516,34 @@ void Board::GenCaptures(std::list<std::string> &move_list, std::list<std::string
     }
 }
 
-void Board::ParseBishop(std::list<std::string> &move_list, int index) {
-    int rank = Rank(index);
-    int file = File(index);
+void Board::ParseBishop(std::list<Move> &move_list, int index) {
+    int xdelta = index % 8 - 1;
+    int ydelta = index / 8;
 
-    // Up Right
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank + i;
-        int fi = file + i;
+    const int directions[] = {
+            -9, -7, 7, 9
+    };
+    const int bounds[] = {
+            index - 9 * std::min(7 - xdelta, ydelta), index - 7 * std::min(xdelta, ydelta),
+            index + 7 * std::min(7 - xdelta, 7 - ydelta), index + 9 * std::min(xdelta, 7 - ydelta)
+    };
 
-        if (ri > 7 || fi > 7)
-            break;
+    for (int i = 0; i < 4; i++) {
+        int off = directions[i];
+        int bound = bounds[i];
+        for (int dI = index + off; mmath::SidedCompare(dI, bounds[i], off < 0) || dI == bounds[i]; dI += off) {
+            if (Ally(dI))
+                break;
 
-        AddMove(move_list, index, Index(ri, fi));
+            AddMove(move_list, index, dI);
 
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Up Left
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank + i;
-        int fi = file - i;
-
-        if (ri > 7 || fi < 0)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Down Right
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank - i;
-        int fi = file + i;
-
-        if (ri < 0 || fi > 7)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Down Left
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank - i;
-        int fi = file - i;
-
-        if (ri < 0 || fi < 0)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
+            if (board[dI] != empty_square)
+                break;
+        }
     }
 }
 
-void Board::ParseKing(std::list<std::string> &move_list, int index) {
+void Board::ParseKing(std::list<Move> &move_list, int index) {
     int rank = Rank(index);
     int file = File(index);
 
@@ -565,7 +552,7 @@ void Board::ParseKing(std::list<std::string> &move_list, int index) {
             int xx = file + x;
             int yy = rank + y;
 
-            if (xx < 0 || xx > 7 || yy < 0 || yy > 7 || (x == y && x == 0))
+            if (xx < 0 || xx > 7 || yy < 0 || yy > 7 || (x == 0 && y == 0) || Ally(yy, xx))
                 continue;
 
             AddMove(move_list, index, Index(yy, xx));
@@ -573,7 +560,7 @@ void Board::ParseKing(std::list<std::string> &move_list, int index) {
     }
 }
 
-void Board::ParseKnight(std::list<std::string> &move_list, int index) {
+void Board::ParseKnight(std::list<Move> &move_list, int index) {
     int rank = Rank(index);
     int file = File(index);
 
@@ -593,7 +580,7 @@ void Board::ParseKnight(std::list<std::string> &move_list, int index) {
     }
 }
 
-void Board::ParsePawn(std::list<std::string> &move_list, int index) {
+void Board::ParsePawn(std::list<Move> &move_list, int index) {
     bool isWhite = isupper(board[index]);
     int rank = Rank(index);
     int file = File(index);
@@ -673,69 +660,33 @@ void Board::ParsePawn(std::list<std::string> &move_list, int index) {
     }
 }
 
-void Board::ParseQueen(std::list<std::string> &move_list, int index) {
+void Board::ParseQueen(std::list<Move> &move_list, int index) {
     ParseBishop(move_list, index);
     ParseRook(move_list, index);
 }
 
-void Board::ParseRook(std::list<std::string> &move_list, int index) {
-    int rank = Rank(index);
-    int file = File(index);
+void Board::ParseRook(std::list<Move> &move_list, int index) {
+    int delta = index % 8;
 
-    // Up
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank + i;
-        int fi = file;
+    const int directions[] = {
+            1, -1, 8, -8
+    };
+    const int bounds[] = {
+            index + 7 - delta, index - delta, 64 - delta, 7 - delta
+    };
 
-        if (ri > 7)
-            break;
+    for (int i = 0; i < 4; i++) {
+        int off = directions[i];
+        int bound = bounds[i];
+        for (int dI = index + off; mmath::SidedCompare(dI, bounds[i], off < 0); dI += off) {
+            if (Ally(dI))
+                break;
 
-        AddMove(move_list, index, Index(ri, fi));
+            AddMove(move_list, index, dI);
 
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Down
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank - i;
-        int fi = file;
-
-        if (ri < 0)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Right
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank;
-        int fi = file + i;
-
-        if (fi > 7)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
-    }
-
-    // Left
-    for (int i = 1; i <= 7; i++) {
-        int ri = rank;
-        int fi = file - i;
-
-        if (fi < 0)
-            break;
-
-        AddMove(move_list, index, Index(ri, fi));
-
-        if (!Empty(ri, fi))
-            break;
+            if (board[dI] != empty_square)
+                break;
+        }
     }
 }
 
@@ -824,6 +775,19 @@ void Board::AddMove(std::list<std::string>& move_list, int fromSquare, int toSqu
     move_list.push_back(move);
 }
 
+void Board::AddMove(std::list<Move>& move_list, int fromSquare, int toSquare, char promotion, bool en_passant) {
+    MoveState state = NORMAL;
+
+    if (promotion)
+        state = PROMOTION;
+    else if (en_passant)
+        state = ENPASSANT;
+    else if (board[toSquare] != empty_square)
+        state = CAPTURE;
+
+    move_list.push_back({state, fromSquare, toSquare, board[toSquare], promotion});
+}
+
 std::list<std::string> Board::GetLegalMoves() {
     return legalMoves;
 }
@@ -832,7 +796,7 @@ std::list<std::string> Board::GetLegalCaptures() {
     return legalCaptures;
 }
 
-std::list<std::string> Board::GetPseudoLegalMoves() {
+std::list<Board::Move> Board::GetPseudoLegalMoves() {
     return pseudoLegalMoves;
 }
 

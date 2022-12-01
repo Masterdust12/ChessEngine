@@ -9,6 +9,6 @@ int mmath::sign(int x) {
 }
 
 bool mmath::SidedCompare(float x, float y, bool greaterThan) {
-    return greaterThan ? x > y : x < y;
+    return greaterThan == (x > y);
 }
 

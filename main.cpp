@@ -12,7 +12,39 @@ void PrintLegalMoves(Board board);
 int main() {
     srand(time(nullptr));
 
-    Board board("1R6/5pkp/p2Qp1p1/3p2q1/3P4/2P2P2/r4PPP/6K1 w - - 5 31", false);
+//    int runs = 1000;
+//
+//    auto start = std::chrono::high_resolution_clock::now();
+//
+//    for (int i = 0; i < runs; i++)
+//        Board board("1R6/5pkp/p2Qp1p1/3p2q1/3P4/2P2P2/r4PPP/6K1 w - - 5 31", false);
+//
+//    auto end = std::chrono::high_resolution_clock::now();
+//
+//    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - start) / runs).count() << "ns" << std::endl;
+
+    Board board("6k1/8/8/4B3/8/8/8/1K6 w - - 0 1");
+
+    auto list = board.GetPseudoLegalMoves();
+
+    // Print out the board, with the squares that can be moved to highlighted
+    for (int i = 0; i < 64; i++) {
+        if (i % 8 == 0)
+            cout << endl;
+
+        bool found = false;
+        for (auto move : list) {
+            if (move.toSquare == i) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found)
+            cout << "X";
+        else
+            cout << board.GetPieceAt(i);
+    }
 
 //    Engine testEngine(1, 100, board);
 //
@@ -25,13 +57,13 @@ int main() {
 //    }
 //
     //PrintLegalMoves(board);
-    board.PrintBoard();
+//    board.PrintBoard();
 
     //board.PrintAttackedSquares();
 
     //PrintLegalMoves(board);
     //TestEngine(board);
-    TestEngine2(board);
+//    TestEngine2(board);
 }
 
 void PrintLegalMoves(Board board) {
