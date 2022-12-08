@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include "chess/Board.h"
-#include "Engine.h"
+#include "chess/BoardMove.cpp"
 
 using namespace std;
 
@@ -11,6 +11,8 @@ void PrintLegalMoves(Board board);
 
 int main() {
     srand(time(nullptr));
+
+    auto startTime = chrono::high_resolution_clock::now();
 
 //    int runs = 1000;
 //
@@ -25,26 +27,36 @@ int main() {
 
     Board board("6k1/8/8/4B3/8/8/8/1K6 w - - 0 1");
 
-    auto list = board.GetPseudoLegalMoves();
+//    board.PrintBoard();
+
+//    auto list = board.GetPseudoLegalMoves();
+
+//    for (const auto& move : list) {
+//        cout << Board::Square(move.fromSquare) << Board::Square(move.toSquare) << endl;
+//    }
 
     // Print out the board, with the squares that can be moved to highlighted
-    for (int i = 0; i < 64; i++) {
-        if (i % 8 == 0)
-            cout << endl;
-
-        bool found = false;
-        for (auto move : list) {
-            if (move.toSquare == i) {
-                found = true;
-                break;
-            }
-        }
-
-        if (found)
-            cout << "X";
-        else
-            cout << board.GetPieceAt(i);
-    }
+//    for (int i = 0; i < 64; i++) {
+//        if (i % 8 == 0)
+//            cout << endl;
+//
+//        bool found = false;
+//        for (auto move : list) {
+//            if (move.toSquare == i) {
+//                found = true;
+//                break;
+//            }
+//        }
+//
+//        if (found)
+//            cout << "X";
+//        else
+//            cout << board.GetPieceAt(i);
+//
+//        cout << " ";
+//    }
+//
+//    cout << endl;
 
 //    Engine testEngine(1, 100, board);
 //
@@ -64,46 +76,52 @@ int main() {
     //PrintLegalMoves(board);
     //TestEngine(board);
 //    TestEngine2(board);
+
+    auto endTime = chrono::high_resolution_clock::now();
+
+    cout << "Time taken: " << chrono::duration_cast<chrono::microseconds>(endTime - startTime).count() << " μs" << endl;
+
+    return 0;
 }
 
 void PrintLegalMoves(Board board) {
-    auto legalMoves = board.GetLegalMoves();
+//    auto legalMoves = board.GetLegalMoves();
 
-    for (const auto& move : legalMoves) {
-        cout << move << endl;
-    }
+//    for (const auto& move : legalMoves) {
+//        cout << move << endl;
+//    }
 }
 
-void TestEngine(Board board) {
-    Engine engine(6, 6000, board);
+//void TestEngine(Board board) {
+//    Engine engine(6, 6000, board);
+//
+//    auto start = std::chrono::high_resolution_clock::now();
+//
+//    auto list = engine.GetBestMove();
+//
+//    auto end = std::chrono::high_resolution_clock::now();
+//
+//    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
+//
+//    for(const auto& move : list) {
+//        std::cout << move << std::endl;
+//    }
+//}
 
-    auto start = std::chrono::high_resolution_clock::now();
-
-    auto list = engine.GetBestMove();
-
-    auto end = std::chrono::high_resolution_clock::now();
-
-    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms" << std::endl;
-
-    for(const auto& move : list) {
-        std::cout << move << std::endl;
-    }
-}
-
-void TestEngine2(Board board) {
-    Engine engine(6, 6000, board);
-
-    float max = 1000;//(board.GetTurn()) ? -99 : 99;
-
-    board.PushMove("c3c4");
-
-    float eval;
-
-    eval = (board.GetTurn()) ?
-           engine.SearchEval(4, -9999, max, true)
-         :   engine.SearchEval(4,  max, 9999, false);
-
-    board.UndoMove();
-
-    cout << eval << endl;
-}
+//void TestEngine2(Board board) {
+//    Engine engine(6, 6000, board);
+//
+//    float max = 1000;//(board.GetTurn()) ? -99 : 99;
+//
+//    board.PushMove("c3c4");
+//
+//    float eval;
+//
+//    eval = (board.GetTurn()) ?
+//           engine.SearchEval(4, -9999, max, true)
+//         :   engine.SearchEval(4,  max, 9999, false);
+//
+//    board.UndoMove();
+//
+//    cout << eval << endl;
+//}
