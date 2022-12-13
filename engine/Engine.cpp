@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <list>
-#include "../misc/mmath.h"
 #include "../chess/Board.h"
 #include "Engine.h"
 
@@ -12,7 +11,7 @@ static int c_SearchDepth = 6;
 static float c_MaxSearchTime = 10;
 static int m_NodesChecked = 0;
 
-void Engine::InitEngine(int searchDepth, float maxSearchTime) {
+void InitEngine(int searchDepth, float maxSearchTime) {
     c_SearchDepth = searchDepth;
     c_MaxSearchTime = maxSearchTime;
 }

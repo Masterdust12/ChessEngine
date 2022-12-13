@@ -6,14 +6,15 @@
 #define CHESSENGINE_PIECEPARSER_H
 
 #include <list>
-#include "BoardMove.h"
-#include "Board.h"
+#include <cstdint>
 
-void ParsePawn(Board& board, char index);
-void ParseBishop(Board& board, char index);
-void ParseKnight(Board& board, char index);
-void ParseRook(Board& board, char index);
-void ParseQueen(Board& board, char index);
-void ParseKing(Board& board, char index);
+class Board;
+
+void ParsePawn(Board& board, int8_t index);
+void ParseBishop(Board& board, int8_t index);
+void ParseKnight(Board& board, int8_t index);
+void ParseRook(Board& board, int8_t index);
+void ParseQueen(Board& board, int8_t index);
+void ParseKing(Board& board, int8_t index);
 
 #endif //CHESSENGINE_PIECEPARSER_H

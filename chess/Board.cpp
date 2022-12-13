@@ -3,76 +3,206 @@
 //
 
 #include "Board.h"
+#include "MoveJudge.h"
 #include <string>
+#include <iostream>
 
 Board::Board() : Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {}
 
 Board::Board(std::string FEN, bool fauxStart, bool debug) {
     turn = true;
 
-//    ParseFEN(std::move(FEN));
+    pseudoLegalMoves = new std::list<Move>();
 
-//    if (!fauxStart)
-//        moveJudge.InspectBoard();
+    ParseFEN(std::move(FEN));
+
+    if (!fauxStart)
+        InspectBoard();
 }
 
-bool Board::WhitePiece(char index) const {
-    return isupper(GetPieceAt(index));
+Board::~Board() {
+    delete pseudoLegalMoves;
 }
 
-bool Board::PieceTurnRelation(char index) const {
-    return WhitePiece(index) == turn;
+void Board::InspectBoard() {
+    pastMoveLists.push(pseudoLegalMoves);
+    pseudoLegalMoves = new std::list<Move>;
 
-bool Board::Empty(char index) const {
-    return IsPieceAt(index, EMPTY_SQUARE);
+    FindPseudoLegalMoves(*this);
 }
 
-bool Board::Ally(char index) const {
-    return !Empty(index) && PieceTurnRelation(index);
-}
+void Board::ParseFEN(std::string FEN) {
+    board.fill('.');
 
-bool Board::Enemy(char index) const {
-    return !Empty(index) && !PieceTurnRelation(index);
-}
+    int offset = 0;
+    size_t i;
 
-char Board::GetPieceAt(char index) const {
-    return board[index];
-}
+    for (i = 0; i < FEN.length(); i++) {
+        char c = FEN[i];
 
-bool Board::IsPieceAt(char index, char piece) const {
-    return GetPieceAt(index) == piece;
-}
+        if (isalpha(c)) {
+            board[i + offset] = c;
+        } else if (isdigit(c)) {
+            offset += (c - '0') - 1;
+        } else if (c == '/') {
+            offset--;
+        }
 
-void Board::SetPieceAt(char index, char piece) {
-    board[index] = piece;
-}
+        if (c == ' ') {
+            turn = FEN[i + 1] == 'w';
+            i += 3;
+            break;
+        }
+    }
 
-void Board::AddPseudoLegalMove(const Move &move) {
-    if (move.Invalid() || Ally(move.toSquare))
-        return;
-
-    pseudoLegalMoves.push_back(move);
-}
-
-char Board::MoveNum() const {
-    return moves.size();
-}
-
-Square* Board::GetEnPassantSquare() {
-    if (i_EPIndex.moveNum == MoveNum())
-        return i_EPIndex.square;
-
-    i_EPIndex.moveNum = MoveNum();
-
-    if (m_EPMap.count(i_EPIndex.moveNum ) == 0) {
-        return (i_EPIndex.square = nullptr);
-    } else {
-        return (i_EPIndex.square = m_EPMap.at(MoveNum()));
+    while (FEN[i] != ' ') {
+        switch(FEN[i]) {
+            case 'K':
+                castling_rights[0] = CASTLE_LEGAL;
+                break;
+            case 'Q':
+                castling_rights[1] = CASTLE_LEGAL;
+                break;
+            case 'k':
+                castling_rights[2] = CASTLE_LEGAL;
+                break;
+            case 'q':
+                castling_rights[3] = CASTLE_LEGAL;
+                break;
+        }
+        i++;
     }
 }
 
-void Board::AddEnPassantSquare(char move, struct Square square) {
-    m_EPMap[move] = &square;
+
+bool Board::WhitePiece(int8_t index) const {
+    return isupper(GetPieceAt(index));
+}
+
+bool Board::PieceTurnRelation(int8_t index) const {
+    return WhitePiece(index) == turn;
+}
+
+bool Board::Empty(int8_t index) const {
+    return IsPieceAt(index, EMPTY_SQUARE);
+}
+
+bool Board::Ally(int8_t index) const {
+    return !Empty(index) && PieceTurnRelation(index);
+}
+
+bool Board::Enemy(int8_t index) const {
+    return !Empty(index) && !PieceTurnRelation(index);
+}
+
+bool Board::Empty(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
+    return Empty(index + fileOffset + rankOffset * BOARD_WIDTH);
+}
+
+bool Board::Ally(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
+    return Ally(index + fileOffset + rankOffset * BOARD_WIDTH);
+}
+
+bool Board::Enemy(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
+    return Enemy(index + fileOffset + rankOffset * BOARD_WIDTH);
+}
+
+int8_t Board::GetPieceAt(int8_t index) const {
+    return board[index];
+}
+
+bool Board::IsPieceAt(int8_t index, char piece) const {
+    return GetPieceAt(index) == piece;
+}
+
+void Board::SetPieceAt(int8_t index, char piece) {
+    board[index] = piece;
+}
+
+int8_t Board::GetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
+    return GetPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH);
+}
+
+bool Board::IsPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece) const {
+    return IsPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH, piece);
+}
+
+void Board::SetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece) {
+    SetPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH, piece);
+}
+
+void Board::AddPseudoLegalMove(const Move &move) {
+    if (move.Invalid() || Ally(*move.toSquare))
+        return;
+
+    pseudoLegalMoves->push_back(move);
+}
+
+int8_t Board::MoveNum() const {
+    return moves.size();
+}
+
+int8_t Board::GetEnPassantSquare() const {
+    if (moves.empty())
+        return -1;
+
+    return moves.top().EPSquare;
+}
+
+void Board::PushMove(const Move &move) {
+    SoftPushMove(move);
+
+    InspectBoard();
+}
+
+void Board::SoftPushMove(const Move &move) {
+    moves.push(move);
+
+    std::swap(board[*move.fromSquare], board[*move.toSquare]);
+    board[*move.fromSquare] = EMPTY_SQUARE;
+
+    if (move.OnMove)
+        (*move.OnMove)();
+}
+
+Move Board::UndoMove() {
+    Move undone = SoftUndoMove();
+
+    auto ptr = pastMoveLists.top();
+    pastMoveLists.pop();
+    delete ptr;
+
+    pseudoLegalMoves = pastMoveLists.top();
+
+    return undone;
+}
+
+Move Board::SoftUndoMove() {
+    Move undone = moves.top();
+    moves.pop();
+
+    std::swap(board[*undone.fromSquare], board[*undone.toSquare]);
+    board[*undone.toSquare] = undone.capturedPiece;
+
+    if (undone.OnUndo)
+        (*undone.OnUndo)();
+
+    return undone;
+}
+
+std::list<Move>* Board::GetPseudoLegalMoves() const {
+    return pseudoLegalMoves;
+}
+
+void Board::PrintBoard() {
+    std::cout << "------------------------" << std::endl;
+    for (int i = 0; i < 64; i++) {
+        std::cout << board[i] << " ";
+        if (i % 8 == 7) {
+            std::cout << std::endl;
+        }
+    }
+    std::cout << "------------------------" << std::endl;
 }
 
 //void Board::PushMove(const std::string& move) {
@@ -173,49 +303,6 @@ void Board::AddEnPassantSquare(char move, struct Square square) {
 //    return move;
 //}
 //
-//void Board::ParseFEN(std::string FEN) {
-//    board.fill('.');
-//
-//    int offset = 0, i = 0;
-//
-//    for (i = 0; i < FEN.length(); i++) {
-//        char c = FEN[i];
-//
-//        if (isalpha(c)) {
-//            board[i + offset] = c;
-//        } else if (isdigit(c)) {
-//            offset += (c - '0') - 1;
-//        } else if (c == '/') {
-//            offset--;
-//        }
-//
-//        if (c == ' ') {
-//            turn = FEN[i + 1] == 'w';
-//            i += 3;
-//            break;
-//        }
-//    }
-//
-//    while (FEN[i] != ' ') {
-//        switch(FEN[i]) {
-//            case 'K':
-//                castling_rights[0] = castle_legal;
-//                break;
-//            case 'Q':
-//                castling_rights[1] = castle_legal;
-//                break;
-//            case 'k':
-//                castling_rights[2] = castle_legal;
-//                break;
-//            case 'q':
-//                castling_rights[3] = castle_legal;
-//                break;
-//        }
-//        i++;
-//    }
-//
-//    i++;
-//}
 //
 //char Board::ParseStdMove(std::string move, int &fromIndex, int &toIndex, char& promotion) {
 //    std::string fromSquare = move.substr(0, 2);
@@ -237,16 +324,6 @@ void Board::AddEnPassantSquare(char move, struct Square square) {
 //}
 //
 //
-//void Board::PrintBoard() {
-//    std::cout << "------------------------" << std::endl;
-//    for (int i = 0; i < 64; i++) {
-//        std::cout << board[i] << " ";
-//        if (i % 8 == 7) {
-//            std::cout << std::endl;
-//        }
-//    }
-//    std::cout << "------------------------" << std::endl;
-//}
 //
 //void Board::PrintAttackedSquares() {
 //std::cout << "------------------------" << std::endl;
@@ -480,13 +557,13 @@ void Board::AddEnPassantSquare(char move, struct Square square) {
 //    }
 //}
 //
-//int Board::Rank(int index) {
-//    return 7 - index / 8;
-//}
-//
-//int Board::File(int index) {
-//    return index % 8;
-//}
+int8_t Board::Rank(int8_t index) {
+    return 7 - index / 8;
+}
+
+int8_t Board::File(int8_t index) {
+    return index % 8;
+}
 //
 //std::string Board::Square(int index) {
 //    return std::string(1, 'a' + File(index)) + std::string(1, Rank(index) + '1');
@@ -496,12 +573,6 @@ void Board::AddEnPassantSquare(char move, struct Square square) {
 //    return Square(Index(rank, file));
 //}
 //
-int Board::Index(int rank, int file) {
-    if (rank < 0 || rank > 7 || file < 0 || file > 7)
-        return -1;
-
-    return (7 - rank) * 8 + file;
-}
 //
 //bool Board::NotAlly(int index) {
 //    return Empty(index) || Enemy(index);
@@ -582,9 +653,9 @@ int Board::Index(int rank, int file) {
 //    return board[Index(rank, file)];
 //}
 //
-//int Board::Index(std::string square){
-//    return Index(square[1] - '1', tolower(square[0] - 'a'));
-//}
+int8_t Board::Index(std::string square) {
+    return (square[0] - 'a') + (7 - (square[1] - '1')) * 8;
+}
 //
 //void Board::PrintMoveStack() {
 //    std::stack<std::string> temp;

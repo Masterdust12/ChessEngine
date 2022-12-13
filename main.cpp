@@ -1,13 +1,14 @@
 #include <iostream>
 #include <chrono>
 #include "chess/Board.h"
-#include "chess/BoardMove.cpp"
+#include "chess/BoardMove.h"
 
 using namespace std;
 
 void TestEngine(Board board);
 void TestEngine2(Board board);
 void PrintLegalMoves(Board board);
+void MoveTest(Board& board, int depth, int &counter);
 
 int main() {
     srand(time(nullptr));
@@ -25,63 +26,36 @@ int main() {
 //
 //    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - start) / runs).count() << "ns" << std::endl;
 
-    Board board("6k1/8/8/4B3/8/8/8/1K6 w - - 0 1");
+    Board board;
 
-//    board.PrintBoard();
+    for (const Move& move : *board.GetPseudoLegalMoves()) {
+        cout << (string) *move.fromSquare << (string) *move.toSquare << endl;
+    }
 
-//    auto list = board.GetPseudoLegalMoves();
-
-//    for (const auto& move : list) {
-//        cout << Board::Square(move.fromSquare) << Board::Square(move.toSquare) << endl;
-//    }
-
-    // Print out the board, with the squares that can be moved to highlighted
-//    for (int i = 0; i < 64; i++) {
-//        if (i % 8 == 0)
-//            cout << endl;
-//
-//        bool found = false;
-//        for (auto move : list) {
-//            if (move.toSquare == i) {
-//                found = true;
-//                break;
-//            }
-//        }
-//
-//        if (found)
-//            cout << "X";
-//        else
-//            cout << board.GetPieceAt(i);
-//
-//        cout << " ";
-//    }
-//
-//    cout << endl;
-
-//    Engine testEngine(1, 100, board);
-//
-//    list<string> moves;
-//
-//    testEngine.AddPriorityMoves(moves);
-//
-//    for (const auto& move : moves) {
-//        cout << move << endl;
-//    }
-//
-    //PrintLegalMoves(board);
-//    board.PrintBoard();
-
-    //board.PrintAttackedSquares();
-
-    //PrintLegalMoves(board);
-    //TestEngine(board);
-//    TestEngine2(board);
+//    int count = 0;
+//    MoveTest(board, 1, count);
+//    cout << "Move Count: " << count << endl;
 
     auto endTime = chrono::high_resolution_clock::now();
 
-    cout << "Time taken: " << chrono::duration_cast<chrono::microseconds>(endTime - startTime).count() << " μs" << endl;
+    cout << "Time taken: " << chrono::duration_cast<chrono::microseconds>(endTime - startTime).count() << " microseconds" << endl;
+
+    board.PrintBoard();
 
     return 0;
+}
+
+void MoveTest(Board &board, int depth, int& counter) {
+    counter++;
+
+    if (depth == 0)
+        return;
+
+    for (const Move& move : *board.GetPseudoLegalMoves()) {
+        board.PushMove(move);
+        MoveTest(board, depth - 1, counter);
+        board.UndoMove();
+    }
 }
 
 void PrintLegalMoves(Board board) {

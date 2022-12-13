@@ -21,38 +21,6 @@
 #include <map>
 #include "BoardMove.h"
 
-struct Square {
-    int file, rank;
-
-    Square(int index) {
-        file = index % BOARD_WIDTH;
-        rank = index / BOARD_WIDTH;
-    }
-
-    Square(int file, int rank) : file(file), rank(rank) {}
-
-    operator char() const {
-        if (rank < 0 || rank > 7 || file < 0 || file > 7)
-            return -1;
-
-        return (7 - rank) * 8 + file;
-    }
-
-
-    Square operator +(const Square& move) const {
-        return {file + move.file, rank + move.rank};
-    }
-};
-
-struct EPIndex {
-    char moveNum;
-    Square* square;
-
-    ~EPIndex() {
-        delete square;
-    }
-};
-
 class Board {
 public:
     std::array<char, 64> board{};
@@ -63,39 +31,49 @@ public:
 
     Board(std::string FEN, bool fauxStart = false, bool debug = false);
 
-    char GetPieceAt(char index) const;
-    bool IsPieceAt(char index, char piece) const;
-    void SetPieceAt(char index, char piece);
+    ~Board();
 
-    bool WhitePiece(char index) const;
-    bool PieceTurnRelation(char index) const;
+    int8_t GetPieceAt(int8_t index) const;
+    bool IsPieceAt(int8_t index, char piece) const;
+    void SetPieceAt(int8_t index, char piece);
 
-    bool Empty(char index) const;
-    bool Ally(char index) const;
-    bool Enemy(char index) const;
+    int8_t GetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset) const;
+    bool IsPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece) const;
+    void SetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece);
+
+    bool WhitePiece(int8_t index) const;
+    bool PieceTurnRelation(int8_t index) const;
+
+    bool Empty(int8_t index) const;
+    bool Ally(int8_t index) const;
+    bool Enemy(int8_t index) const;
+
+    bool Empty(int8_t index, int8_t fileOffset, int8_t rankOffset) const;
+    bool Ally(int8_t index, int8_t fileOffset, int8_t rankOffset) const;
+    bool Enemy(int8_t index, int8_t fileOffset, int8_t rankOffset) const;
 
     void AddPseudoLegalMove(const Move& move);
 
-    char MoveNum() const;
+    int8_t MoveNum() const;
 
-    Square* GetEnPassantSquare();
-    void AddEnPassantSquare(char move, Square square);
+    int8_t GetEnPassantSquare() const;
+    std::list<Move>* GetPseudoLegalMoves() const;
 
-    void PushMove(const std::string &move);
 
+    static int8_t Index(std::string square);
+    static int8_t Rank(int8_t index);
+    static int8_t File(int8_t index);
+
+    void PushMove(const Move &move);
     void SoftPushMove(const Move &move);
+    Move UndoMove();
+    Move SoftUndoMove();
 
-    std::string UndoMove();
-
-    std::string SoftUndoMove();
-
-    bool IsAttacked(char index);
+    bool IsAttacked(int8_t index);
 
     std::list<Move> GetLegalMoves();
 
     std::list<std::string> GetLegalCaptures();
-
-    std::list<Move> GetPseudoLegalMoves();
 
     std::list<std::string> GetPseudoLegalCaptures();
 
@@ -127,32 +105,21 @@ public:
 
     std::string GenMove(char fromSquare, char toSquare, char promotion = 0, bool en_passant = false);
 
-    bool Enemy(char index);
-
-    bool Empty(char index);
-
-    static std::string Square(char index);
-
+    static std::string Square(int8_t index);
     static std::string Square(char rank, char file);
 
-    static char Index(char x, char y);
-
-    static char Index(std::string square);
-
-    static char Rank(char index);
-
-    static char File(char index);
-
 private:
-    std::stack<std::string> moves;
+    std::stack<Move> moves;
+    std::stack<std::list<Move>*> pastMoveLists;
 
-    std::list<Move> pseudoLegalMoves;
-    std::list<Move> legalMoves;
+    std::list<Move>* pseudoLegalMoves;
+    std::list<Move>* legalMoves;
 
     std::stack<Move> moveStack;
 
     std::map<char, struct Square*> m_EPMap;
-    EPIndex i_EPIndex;
+
+    void InspectBoard();
 
     static int closerSquare(int base, int compare1, int compare2);
 

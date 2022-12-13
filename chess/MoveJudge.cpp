@@ -2,11 +2,10 @@
 // Created by zbv11 on 03-Dec-22.
 //
 
-#include "MoveJudge.h"
-#include "PieceParser.h"
 #include "Board.h"
+#include "PieceParser.h"
 
-void FindPseudoLegalMoves(std::list<Move>& moves, Board& board) {
+void FindPseudoLegalMoves(Board &board) {
     for (char i = 0; i < BOARD_SIZE; i++) {
         if (!board.Ally(i))
             continue;
@@ -15,22 +14,22 @@ void FindPseudoLegalMoves(std::list<Move>& moves, Board& board) {
 
         switch (piece) {
             case 'p':
-                ParsePawn(moves, board, i);
+                ParsePawn(board, i);
                 break;
             case 'r':
-                ParseRook(moves, board, i);
+                ParseRook(board, i);
                 break;
             case 'n':
-                ParseKnight(moves, board, i);
+                ParseKnight(board, i);
                 break;
             case 'b':
-                ParseBishop(moves, board, i);
+                ParseBishop(board, i);
                 break;
             case 'q':
-                ParseQueen(moves, board, i);
+                ParseQueen(board, i);
                 break;
             case 'k':
-                ParseKing(moves, board, i);
+                ParseKing(board, i);
                 break;
             default:
                 break;
