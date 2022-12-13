@@ -132,10 +132,10 @@ void Board::SetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char 
 }
 
 void Board::AddPseudoLegalMove(const Move &move) {
-    if (move.Invalid() || Ally(*move.toSquare))
+    if (move.Invalid() || Ally(move.toSquare))
         return;
 
-    pseudoLegalMoves->push_back(move);
+    pseudoLegalMoves->push_back(Move(move));
 }
 
 int8_t Board::MoveNum() const {
@@ -158,8 +158,8 @@ void Board::PushMove(const Move &move) {
 void Board::SoftPushMove(const Move &move) {
     moves.push(move);
 
-    std::swap(board[*move.fromSquare], board[*move.toSquare]);
-    board[*move.fromSquare] = EMPTY_SQUARE;
+    std::swap(board[move.fromSquare], board[move.toSquare]);
+    board[move.fromSquare] = EMPTY_SQUARE;
 
     if (move.OnMove)
         (*move.OnMove)();
@@ -181,8 +181,8 @@ Move Board::SoftUndoMove() {
     Move undone = moves.top();
     moves.pop();
 
-    std::swap(board[*undone.fromSquare], board[*undone.toSquare]);
-    board[*undone.toSquare] = undone.capturedPiece;
+    std::swap(board[undone.fromSquare], board[undone.toSquare]);
+    board[undone.toSquare] = undone.capturedPiece;
 
     if (undone.OnUndo)
         (*undone.OnUndo)();

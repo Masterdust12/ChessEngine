@@ -29,7 +29,7 @@ int main() {
     Board board;
 
     for (const Move& move : *board.GetPseudoLegalMoves()) {
-        cout << (string) *move.fromSquare << (string) *move.toSquare << endl;
+        cout << (string) move.fromSquare << (string) move.toSquare << endl;
     }
 
 //    int count = 0;

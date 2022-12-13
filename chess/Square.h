@@ -11,6 +11,7 @@
 struct Square {
     int8_t file, rank;
 
+    Square(const Square &square);
     Square(int8_t index);
     Square(int8_t file, int8_t rank);
     Square(int8_t index, int8_t fileOffset, int8_t rankOffset);

@@ -5,6 +5,11 @@
 #include "Square.h"
 #include "Board.h"
 
+Square::Square(const Square &square) {
+    file = square.file;
+    rank = square.rank;
+}
+
 Square::Square(int8_t index) {
     file = index % BOARD_WIDTH;
     rank = index / BOARD_WIDTH;

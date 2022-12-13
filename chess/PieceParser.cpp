@@ -22,7 +22,7 @@ void ParsePawn(Board &board, int8_t index) {
 
         if (!startRank || !board.Empty(index, 0, 2 * side)) {
             Move move = ParseStdMove(board, index, index + 16 * side);
-            move.EPSquare = *move.toSquare - 8 * side;
+            move.EPSquare = move.toSquare - 8 * side;
 
             board.AddPseudoLegalMove(move);
         }
