@@ -107,7 +107,7 @@ bool Board::Enemy(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
     return Enemy(index + fileOffset + rankOffset * BOARD_WIDTH);
 }
 
-int8_t Board::GetPieceAt(int8_t index) const {
+char Board::GetPieceAt(char index) const {
     return board[index];
 }
 

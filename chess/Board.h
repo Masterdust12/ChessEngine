@@ -33,7 +33,7 @@ public:
 
     ~Board();
 
-    int8_t GetPieceAt(int8_t index) const;
+    char GetPieceAt(char index) const;
     bool IsPieceAt(int8_t index, char piece) const;
     void SetPieceAt(int8_t index, char piece);
 

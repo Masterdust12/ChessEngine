@@ -45,66 +45,56 @@ void ParsePawn(Board &board, int8_t index) {
 }
 
 void ParseBishop(Board &board, int8_t index) {
-    int xdelta = index % 8 - 1;
-    int ydelta = index / 8;
+    Square square(index);
 
-    const int directions[] = {
-            -9, -7, 7, 9
-    };
-    const int bounds[] = {
-            index - 9 * std::min(7 - xdelta, ydelta), index - 7 * std::min(xdelta, ydelta),
-            index + 7 * std::min(7 - xdelta, 7 - ydelta), index + 9 * std::min(xdelta, 7 - ydelta)
+    const Square directions[] = {
+            {1, 1}, {-1, -1}, {-1, 1}, {1, -1}
     };
 
-    for (int i = 0; i < 4; i++) {
-        int8_t off = directions[i];
-        int8_t bound = bounds[i];
+    for (const Square& dir : directions) {
+        Square origin = square;
 
-        for (int8_t dI = index + off; SidedCompare(dI, bound, off < 0) || dI == bound; dI += off) {
-            if (board.Ally(dI))
-                break;
+        while (origin.Valid()) {
+            origin += dir;
 
-            board.AddPseudoLegalMove(ParseStdMove(board, index, dI));
+            if (board.Ally(origin)) break;
 
-            if (!board.Empty(dI))
-                break;
+            board.AddPseudoLegalMove(ParseStdMove(board, square, origin));
+
+            if (!board.Empty(origin)) break;
         }
     }
 }
 
 void ParseKnight(Board &board, int8_t index) {
-    // Frankly, just a really stupid way to generate possible knight moves
-    const int8_t offsets[] = {
-            1, -1, 2, -2
-    };
-
-    for (int i = 0; i < 4; i++) {
-        board.AddPseudoLegalMove(ParseStdMove(board, index, offsets[i], offsets[(i <= 2) * 2]));
-        board.AddPseudoLegalMove(ParseStdMove(board, index, offsets[i], offsets[(i <= 2) * 2 + 1]));
-    }
+    board.AddPseudoLegalMove(ParseStdMove(board, index, 1, 2));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, -1, 2));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, 1, -2));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, -1, -2));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, 2, 1));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, 2, -1));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, -2, 1));
+    board.AddPseudoLegalMove(ParseStdMove(board, index, -2, -1));
 }
 
 void ParseRook(Board &board, int8_t index) {
-    int8_t delta = index % 8;
+    Square square(index);
 
-    const int directions[] = {
-            1, -1, 8, -8
-    };
-    const int bounds[] = {
-            index + 7 - delta, index - delta, 64 - delta, 7 - delta
+    const Square directions[] = {
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1}
     };
 
-    for (int i = 0; i < 4; i++) {
-        int off = directions[i];
+    for (const Square& dir : directions) {
+        Square origin = square;
 
-        for (int8_t dI = index + off; dI != bounds[i]; dI += off) {
-            if (board.Ally(dI))
-                break;
+        while (origin.Valid()) {
+            origin += dir;
 
-            board.AddPseudoLegalMove(ParseStdMove(board, index, dI));
+            if (board.Ally(origin)) break;
 
-            if (!board.Empty(dI))
-                break;
+            board.AddPseudoLegalMove(ParseStdMove(board, square, origin));
+
+            if (!board.Empty(origin)) break;
         }
     }
 }

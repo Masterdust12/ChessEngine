@@ -26,21 +26,42 @@ int main() {
 //
 //    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - start) / runs).count() << "ns" << std::endl;
 
-    Board board;
+    Board board("2K5/5k2/8/8/3N4/8/8/8 w - - 0 1");
 
-    for (const Move& move : *board.GetPseudoLegalMoves()) {
-        cout << (string) move.fromSquare << (string) move.toSquare << endl;
+//    for (const Move& move : *board.GetPseudoLegalMoves()) {
+//        cout << (string) move.fromSquare << (string) move.toSquare << endl;
+//    }
+
+    // Print out the board, but if a move lands on a square, mark it with an X
+    // This is useful for debugging
+    for (int8_t i = 0; i < 64; i++) {
+        if (board.GetPieceAt(i) != EMPTY_SQUARE) {
+            cout << board.GetPieceAt(i);
+            goto end;
+        } else {
+            for (const Move& move : *board.GetPseudoLegalMoves()) {
+                if ((int8_t) move.toSquare == i) {
+                    cout << 'X';
+                    goto end;
+                }
+            }
+        }
+
+        cout << EMPTY_SQUARE;
+
+        end:
+        cout << " ";
+
+        if (i % 8 == 7)
+            cout << endl;
     }
 
-//    int count = 0;
-//    MoveTest(board, 1, count);
-//    cout << "Move Count: " << count << endl;
 
     auto endTime = chrono::high_resolution_clock::now();
 
     cout << "Time taken: " << chrono::duration_cast<chrono::microseconds>(endTime - startTime).count() << " microseconds" << endl;
 
-    board.PrintBoard();
+//    board.PrintBoard();
 
     return 0;
 }
