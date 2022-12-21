@@ -13,24 +13,24 @@ void FindPseudoLegalMoves(Board &board) {
         int piece = tolower(board.GetPieceAt(i));
 
         switch (piece) {
-//            case 'p':
-//                ParsePawn(board, i);
+            case 'p':
+                ParsePawn(board, i);
+                break;
+//            case 'r':
+//                ParseRook(board, i);
 //                break;
-            case 'r':
-                ParseRook(board, i);
-                break;
-            case 'n':
-                ParseKnight(board, i);
-                break;
-            case 'b':
-                ParseBishop(board, i);
-                break;
-            case 'q':
-                ParseQueen(board, i);
-                break;
-            case 'k':
-                ParseKing(board, i);
-                break;
+//            case 'n':
+//                ParseKnight(board, i);
+//                break;
+//            case 'b':
+//                ParseBishop(board, i);
+//                break;
+//            case 'q':
+//                ParseQueen(board, i);
+//                break;
+//            case 'k':
+//                ParseKing(board, i);
+//                break;
             default:
                 break;
         }

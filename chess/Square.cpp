@@ -5,14 +5,30 @@
 #include "Square.h"
 #include "Board.h"
 
+Square::Square() {
+    file = -1;
+    rank = -1;
+}
+
 Square::Square(const Square &square) {
     file = square.file;
     rank = square.rank;
 }
 
+Square::Square(const std::string &square) {
+    file = square[0] - 'a';
+    rank = square[1] - '1';
+}
+
 Square::Square(int8_t index) {
-    file = index % BOARD_WIDTH;
-    rank = 7 - index / BOARD_WIDTH;
+    if (index == -1) {
+        file = -1;
+        rank = -1;
+        return;
+    }
+
+    file = index % BOARD_DIM;
+    rank = 7 - index / BOARD_DIM;
 }
 
 Square::Square(int8_t file, int8_t rank) {
@@ -21,8 +37,8 @@ Square::Square(int8_t file, int8_t rank) {
 }
 
 Square::Square(int8_t index, int8_t fileOffset, int8_t rankOffset) {
-    file = (7 - index % BOARD_WIDTH) + fileOffset;
-    rank = (7 - index / BOARD_WIDTH) + rankOffset;
+    file = (7 - index % BOARD_DIM) + fileOffset;
+    rank = (7 - index / BOARD_DIM) + rankOffset;
 }
 
 Square::Square(Square base, int8_t fileOffset, int8_t rankOffset) {
@@ -47,6 +63,10 @@ bool Square::Valid() const {
 
 Square Square::operator +(const Square& move) const {
     return {static_cast<int8_t>(file + move.file), static_cast<int8_t>(rank + move.rank)};
+}
+
+Square Square::operator -(const Square& move) const {
+    return {static_cast<int8_t>(file - move.file), static_cast<int8_t>(rank - move.rank)};
 }
 
 Square Square::operator +=(const Square& move) {

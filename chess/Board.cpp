@@ -96,15 +96,15 @@ bool Board::Enemy(int8_t index) const {
 }
 
 bool Board::Empty(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
-    return Empty(index + fileOffset + rankOffset * BOARD_WIDTH);
+    return Empty(index + fileOffset - rankOffset * BOARD_DIM);
 }
 
 bool Board::Ally(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
-    return Ally(index + fileOffset + rankOffset * BOARD_WIDTH);
+    return Ally(index + fileOffset - rankOffset * BOARD_DIM);
 }
 
 bool Board::Enemy(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
-    return Enemy(index + fileOffset + rankOffset * BOARD_WIDTH);
+    return Enemy(index + fileOffset - rankOffset * BOARD_DIM);
 }
 
 char Board::GetPieceAt(char index) const {
@@ -120,15 +120,15 @@ void Board::SetPieceAt(int8_t index, char piece) {
 }
 
 int8_t Board::GetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset) const {
-    return GetPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH);
+    return GetPieceAt(index + fileOffset + rankOffset * BOARD_DIM);
 }
 
 bool Board::IsPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece) const {
-    return IsPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH, piece);
+    return IsPieceAt(index + fileOffset + rankOffset * BOARD_DIM, piece);
 }
 
 void Board::SetPieceAt(int8_t index, int8_t fileOffset, int8_t rankOffset, char piece) {
-    SetPieceAt(index + fileOffset + rankOffset * BOARD_WIDTH, piece);
+    SetPieceAt(index + fileOffset + rankOffset * BOARD_DIM, piece);
 }
 
 void Board::AddPseudoLegalMove(const Move &move) {
@@ -142,7 +142,7 @@ int8_t Board::MoveNum() const {
     return moves.size();
 }
 
-int8_t Board::GetEnPassantSquare() const {
+Square Board::GetEnPassantSquare() const {
     if (moves.empty())
         return -1;
 
@@ -161,8 +161,7 @@ void Board::SoftPushMove(const Move &move) {
     std::swap(board[move.fromSquare], board[move.toSquare]);
     board[move.fromSquare] = EMPTY_SQUARE;
 
-    if (move.OnMove)
-        (*move.OnMove)();
+    turn = !turn;
 }
 
 Move Board::UndoMove() {
@@ -183,9 +182,6 @@ Move Board::SoftUndoMove() {
 
     std::swap(board[undone.fromSquare], board[undone.toSquare]);
     board[undone.toSquare] = undone.capturedPiece;
-
-    if (undone.OnUndo)
-        (*undone.OnUndo)();
 
     return undone;
 }

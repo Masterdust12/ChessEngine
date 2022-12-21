@@ -7,14 +7,15 @@
 
 #include <list>
 #include <cstdint>
+#include "Square.h"
 
 class Board;
 
-void ParsePawn(Board& board, int8_t index);
-void ParseBishop(Board& board, int8_t index);
-void ParseKnight(Board& board, int8_t index);
-void ParseRook(Board& board, int8_t index);
-void ParseQueen(Board& board, int8_t index);
-void ParseKing(Board& board, int8_t index);
+void ParsePawn(Board& board, const Square &index);
+void ParseBishop(Board& board, const Square &index);
+void ParseKnight(Board& board, const Square &index);
+void ParseRook(Board& board, const Square &index);
+void ParseQueen(Board& board, const Square &index);
+void ParseKing(Board& board, const Square &index);
 
 #endif //CHESSENGINE_PIECEPARSER_H

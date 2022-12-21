@@ -26,7 +26,26 @@ int main() {
 //
 //    std::cout << "Time taken: " << std::chrono::duration_cast<std::chrono::nanoseconds>((end - start) / runs).count() << "ns" << std::endl;
 
-    Board board("2K5/5k2/8/8/3N4/8/8/8 w - - 0 1");
+    Board board;
+
+    string moves[] = {
+            "e2e4",
+            "a7a6",
+            "e4e5",
+            "d7d5"
+    };
+
+    for (const string& move : moves) {
+        Square fromSquare = move.substr(0, 2);
+        Square toSquare = move.substr(2, 2);
+
+        for (const Move& pmove : *board.GetPseudoLegalMoves()) {
+            if (pmove.fromSquare == fromSquare && pmove.toSquare == toSquare) {
+                board.PushMove(pmove);
+                break;
+            }
+        }
+    }
 
 //    for (const Move& move : *board.GetPseudoLegalMoves()) {
 //        cout << (string) move.fromSquare << (string) move.toSquare << endl;

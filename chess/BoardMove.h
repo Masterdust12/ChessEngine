@@ -15,13 +15,8 @@ class Board;
 struct Move {
     Square fromSquare, toSquare;
     char capturedPiece;
-    std::function<void()> *OnMove = nullptr, *OnUndo = nullptr;
-    int8_t EPSquare = -1;
-
-    ~Move() {
-        delete OnMove;
-        delete OnUndo;
-    }
+    char promotion = EMPTY_SQUARE;
+    Square EPSquare = -1;
 
     bool operator==(const std::string& move) const;
     bool operator!=(const std::string& move) const;
@@ -46,5 +41,10 @@ Move ParseStdMove(const Board& board, const Square& fromSquare, const Square& to
  *   - The move is not a castling move, an en passant move, or a promotion move.
  */
 Move ParseStdMove(const Board& board, Square fromSquare, int8_t fileOff, int8_t rankOff);
+
+/**
+ *
+ */
+void AddPawnMoves(const Board& board, std::list<Move>& moveList, const Square& fromSquare, const Square& toSquare);
 
 #endif //CHESSENGINE_BOARDMOVE_H

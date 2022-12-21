@@ -35,3 +35,7 @@ Move ParseStdMove(const Board& board, const Square& fromSquare, const Square& to
 Move ParseStdMove(const Board& board, Square fromSquare, int8_t fileOff, int8_t rankOff) {
     return ParseStdMove(board, fromSquare, Square(fromSquare, fileOff, rankOff));
 }
+
+void AddPawnMoves(const Board& board, std::list<Move>& moveList, const Square& fromSquare, const Square& toSquare) {
+
+}

@@ -3,8 +3,7 @@
 
 // Board Macros:
 #define BOARD_SIZE 64
-#define BOARD_WIDTH 8
-#define BOARD_HEIGHT 8
+#define BOARD_DIM 8
 
 #define EMPTY_SQUARE '.'
 
@@ -56,7 +55,7 @@ public:
 
     int8_t MoveNum() const;
 
-    int8_t GetEnPassantSquare() const;
+    Square GetEnPassantSquare() const;
     std::list<Move>* GetPseudoLegalMoves() const;
 
 
@@ -66,6 +65,7 @@ public:
 
     void PushMove(const Move &move);
     void SoftPushMove(const Move &move);
+
     Move UndoMove();
     Move SoftUndoMove();
 
@@ -103,11 +103,6 @@ public:
 
     void PrintMoveStack();
 
-    std::string GenMove(char fromSquare, char toSquare, char promotion = 0, bool en_passant = false);
-
-    static std::string Square(int8_t index);
-    static std::string Square(char rank, char file);
-
 private:
     std::stack<Move> moves;
     std::stack<std::list<Move>*> pastMoveLists;
@@ -116,8 +111,6 @@ private:
     std::list<Move>* legalMoves;
 
     std::stack<Move> moveStack;
-
-    std::map<char, struct Square*> m_EPMap;
 
     void InspectBoard();
 

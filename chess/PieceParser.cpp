@@ -2,71 +2,66 @@
 // Created by zbv11 on 07-Dec-22.
 //
 
-#include <functional>
 #include "PieceParser.h"
 #include "Board.h"
 
-void ParsePawn(Board &board, int8_t index) {
+void ParsePawn(Board &board, const Square &index) {
     const int8_t side = (board.turn) ? 1 : -1;
-    bool startRank = Board::Rank(index) == (board.turn ? 1 : 6);
+    bool startRank = index.rank == (board.turn ? 1 : 6);
 
     // Capture Left
-    if (board.Enemy(index, -1, side) && Board::File(index) != 0)
-        board.AddPseudoLegalMove(ParseStdMove(board, index, index + 7 * side));
+    if (board.Enemy(index, -1, side))
+        board.AddPseudoLegalMove(ParseStdMove(board, index, -1, side));
 
-    if (board.Enemy(index, 1, side) && Board::File(index) != 7)
-        board.AddPseudoLegalMove(ParseStdMove(board, index, index + 9 * side));
+    // Capture Right
+    if (board.Enemy(index, 1, side))
+        board.AddPseudoLegalMove(ParseStdMove(board, index, 1, side));
 
+    // Forward (1 Square)
     if (board.Empty(index, 0, side)) {
-        board.AddPseudoLegalMove(ParseStdMove(board, index, index + 8 * side));
+        board.AddPseudoLegalMove(ParseStdMove(board, index, 0, side));
 
-        if (!startRank || !board.Empty(index, 0, 2 * side)) {
-            Move move = ParseStdMove(board, index, index + 16 * side);
-            move.EPSquare = move.toSquare - 8 * side;
+        // Forward (2 Squares)
+        if (startRank && board.Empty(index, 0, 2 * side)) {
+            Move move = ParseStdMove(board, index, 0, 2 * side);
+            move.EPSquare = move.toSquare + Square(0, side);
 
             board.AddPseudoLegalMove(move);
         }
     }
 
-    int8_t enPassant = board.GetEnPassantSquare();
+    Square enPassant = board.GetEnPassantSquare();
 
-    if (enPassant != -1) {
-        if (index - enPassant == 7 * side || index - enPassant == 9 * side) {
-            Move move = ParseStdMove(board, index, enPassant);
-            move.OnMove = new std::function<void()>([&] {
-                board.SetPieceAt(enPassant,0);
-            });
-            move.OnUndo = new std::function<void()>([&] {
-                board.SetPieceAt(enPassant, (board.turn) ? 'p' : 'P');
-            });
-            board.AddPseudoLegalMove(move);
+    if (enPassant.Valid()) {
+        const Square difference = index - enPassant;
+
+        if (abs(difference.file) == 1 && difference.rank == side) {
+            board.AddPseudoLegalMove(ParseStdMove(board, index, -difference.file, difference.rank));
         }
     }
 }
 
-void ParseBishop(Board &board, int8_t index) {
-    Square square(index);
-
+void ParseBishop(Board &board, const Square &index) {
     const Square directions[] = {
             {1, 1}, {-1, -1}, {-1, 1}, {1, -1}
     };
 
     for (const Square& dir : directions) {
-        Square origin = square;
+        Square origin = index;
 
         while (origin.Valid()) {
             origin += dir;
 
             if (board.Ally(origin)) break;
 
-            board.AddPseudoLegalMove(ParseStdMove(board, square, origin));
+            board.AddPseudoLegalMove(ParseStdMove(board, index, origin));
 
             if (!board.Empty(origin)) break;
         }
     }
 }
 
-void ParseKnight(Board &board, int8_t index) {
+void ParseKnight(Board &board, const Square &index) {
     board.AddPseudoLegalMove(ParseStdMove(board, index, 1, 2));
     board.AddPseudoLegalMove(ParseStdMove(board, index, -1, 2));
     board.AddPseudoLegalMove(ParseStdMove(board, index, 1, -2));
@@ -77,34 +72,32 @@ void ParseKnight(Board &board, int8_t index) {
     board.AddPseudoLegalMove(ParseStdMove(board, index, -2, -1));
 }
 
-void ParseRook(Board &board, int8_t index) {
-    Square square(index);
-
+void ParseRook(Board &board, const Square &index) {
     const Square directions[] = {
             {1, 0}, {-1, 0}, {0, 1}, {0, -1}
     };
 
     for (const Square& dir : directions) {
-        Square origin = square;
+        Square origin = index;
 
         while (origin.Valid()) {
             origin += dir;
 
             if (board.Ally(origin)) break;
 
-            board.AddPseudoLegalMove(ParseStdMove(board, square, origin));
+            board.AddPseudoLegalMove(ParseStdMove(board, index, origin));
 
             if (!board.Empty(origin)) break;
         }
     }
 }
 
-void ParseQueen(Board &board, int8_t index) {
+void ParseQueen(Board &board, const Square &index) {
     ParseRook(board, index);
     ParseBishop(board, index);
 }
 
-void ParseKing(Board &board, int8_t index) {
+void ParseKing(Board &board, const Square &index) {
     for (int8_t i = -1; i <= 1; i++) {
         for (int8_t j = -1; j <= 1; j++) {
             if (i == 0 && j == 0)
